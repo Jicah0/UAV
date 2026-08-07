@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+# image/video output
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.mp4
+*.avi
+*.mkv
