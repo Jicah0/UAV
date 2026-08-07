@@ -2,7 +2,7 @@
 
 
 
-Autonomous vision-based docking for a custom 5" quad. Companion computer
+Autonomous vision-based docking for a custom 230mm quad. Companion computer
 
 runs the CV pipeline, sends MAVLink LANDING\_TARGET to the flight controller.
 
@@ -16,7 +16,7 @@ runs the CV pipeline, sends MAVLink LANDING\_TARGET to the flight controller.
 
 \- FC: MicoAir743 v2, ArduCopter 4.7.0
 
-\- Rangefinder: Benewake TF-Luna, downward, 0.2m minimum range
+\- Rangefinder: Benewake TF-Luna, downward, 0.2m minimum range. Havent bought yet
 
 
 
