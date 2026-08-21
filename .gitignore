@@ -1,4 +1,9 @@
 .venv/
+myVirtualEnvironment
+venv/
+env/
+ENV/
+
 __pycache__/
 *.pyc
 

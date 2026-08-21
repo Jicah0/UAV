@@ -78,6 +78,22 @@ class FCLink:
             0, yaw_rate,  # yaw, yaw_rate
         )
 
+        def send_position_command(self, x, y, z, yaw=0.0):
+                """Body-frame position command in m. Vehicle must be in GUIDED
+                mode for this to take effect."""
+                type_mask = 0b0000111111000111  # enable velocity + yaw_rate only
+                self.master.mav.set_position_target_local_ned_send(
+                    0,
+                    self.master.target_system,
+                    self.master.target_component,
+                    mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,      # Drone-Centric Coordinates
+                    type_mask,
+                    x, y, z,      # position (ignored)
+                    0, 0, 0,   # velocity
+                    0, 0, 0,      # acceleration (ignored)
+                    yaw, 0,  # yaw, yaw_rate
+                )
+
     # ---- main loop ---------------------------------------------------------
 
     def spin(self):
