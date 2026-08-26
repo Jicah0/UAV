@@ -11,15 +11,16 @@ Wiring:
 FC side (ArduPilot):
     Set SERIALx_PROTOCOL = 2 (MAVLink2) on the UART you wired up,
     and SERIALx_BAUD to match BAUD below.
+    For send_landing_target(): also set PLND_ENABLED=1, PLND_TYPE=1.
 
 Install:
     pip install pymavlink --break-system-packages
 
 --------------------------------------------------------------------------
 This uses only standard, built-in MAVLink message types (NAMED_VALUE_FLOAT,
-ATTITUDE, SET_POSITION_TARGET_LOCAL_NED, etc.) - no custom framing or
-chunking. ArduPilot parses these natively and any ground station will
-display them for free.
+ATTITUDE, SET_POSITION_TARGET_LOCAL_NED, LANDING_TARGET, etc.) - no custom
+framing or chunking. ArduPilot parses these natively and any ground
+station will display them for free.
 
 Add a new message type to react to by:
     - writing a small handler function, and
@@ -65,7 +66,12 @@ class FCLink:
     def send_velocity_command(self, vx, vy, vz, yaw_rate=0.0):
         """Body-frame velocity command in m/s. Vehicle must be in GUIDED
         mode for this to take effect."""
-        type_mask = 0b0000111111000111  # enable velocity + yaw_rate only
+        # NOTE: as in the original script, this mask (the classic
+        # DroneKit velocity-only mask) sets bit 11 = ignore, meaning
+        # yaw_rate below is currently NOT applied by the FC regardless of
+        # value. Clear bit 11 (mask = 0b0000011111000111) if you want it
+        # to actually take effect.
+        type_mask = 0b0000011111000111  # enable velocity + yaw_rate only
         self.master.mav.set_position_target_local_ned_send(
             0,
             self.master.target_system,
@@ -78,21 +84,44 @@ class FCLink:
             0, yaw_rate,  # yaw, yaw_rate
         )
 
-        def send_position_command(self, x, y, z, yaw=0.0):
-                """Body-frame position command in m. Vehicle must be in GUIDED
-                mode for this to take effect."""
-                type_mask = 0b0000111111000111  # enable velocity + yaw_rate only
-                self.master.mav.set_position_target_local_ned_send(
-                    0,
-                    self.master.target_system,
-                    self.master.target_component,
-                    mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,      # Drone-Centric Coordinates
-                    type_mask,
-                    x, y, z,      # position (ignored)
-                    0, 0, 0,   # velocity
-                    0, 0, 0,      # acceleration (ignored)
-                    yaw, 0,  # yaw, yaw_rate
-                )
+    def send_landing_target(self, angle_x, angle_y, distance,
+                             size_x=0.0, size_y=0.0, target_num=0,
+                             frame=None, x=0.0, y=0.0, z=0.0,
+                             q=(1.0, 0.0, 0.0, 0.0), target_type=2,
+                             position_valid=0):
+        """Send a MAVLink LANDING_TARGET message for ArduPilot Precision
+        Landing/Loiter (requires PLND_ENABLED=1, PLND_TYPE=1 on the FC).
+
+        Defaults to image-relative angle/distance mode (position_valid=0),
+        which only needs angle_x, angle_y, distance, size_x, size_y - the
+        fields a fiducial detector (e.g. AprilTag) naturally produces, and
+        sidesteps having to rotate the detector's camera-frame pose into
+        vehicle body FRD.
+
+        Pass position_valid=1 with x/y/z/q populated instead (in
+        MAV_FRAME_BODY_FRD) if you have a full 6-DOF body-frame pose to
+        send.
+
+        target_type defaults to 2 = LANDING_TARGET_TYPE_VISION_FIDUCIAL,
+        the correct value for AprilTag/ArUco-style markers.
+        """
+        if frame is None:
+            frame = mavutil.mavlink.MAV_FRAME_BODY_FRD
+
+        self.master.mav.landing_target_send(
+            int(time.time() * 1e6),        # time_usec
+            target_num,                     # target_num
+            frame,                          # frame
+            float(angle_x),                 # angle_x, rad
+            float(angle_y),                 # angle_y, rad
+            float(distance),                # distance, m
+            float(size_x),                  # size_x, rad
+            float(size_y),                  # size_y, rad
+            float(x), float(y), float(z),   # x, y, z, m
+            list(q),                        # quaternion (w, x, y, z)
+            target_type,                     # LANDING_TARGET_TYPE
+            position_valid,                  # position_valid
+        )
 
     # ---- main loop ---------------------------------------------------------
 
