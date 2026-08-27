@@ -70,3 +70,7 @@ Repo is cloned at \~/UAV on the Pi. Pull there after pushing from Windows.
 
 Python 3. Never write per-pixel loops in Python; use numpy or OpenCV calls.
 
+## Git commits
+
+Never add Claude as a co-author. No `Co-Authored-By: Claude ...` trailer, and no mention of Claude/Anthropic in commit messages, PR titles, or PR descriptions.
+
